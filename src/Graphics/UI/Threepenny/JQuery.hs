@@ -14,14 +14,14 @@ data Easing = Swing | Linear
 instance Default Easing where def = Linear
 
 -- | Fade in an element.
-fadeIn :: Element -> Int -> Easing -> IO () -> UI ()
+fadeIn :: Element -> Int -> Easing -> IO () -> UI ps t ()
 fadeIn el duration easing complete = do
     callback <- ffiExport complete
     runFunction $ ffi "$(%1).animate({opacity: 1}, %2 * 1, %3, %4)"
         el duration (map toLower (show easing)) callback
 
 -- | Fade out an element.
-fadeOut :: Element -> Int -> Easing -> IO () -> UI ()
+fadeOut :: Element -> Int -> Easing -> IO () -> UI ps t ()
 fadeOut el duration easing complete = do
     callback <- ffiExport complete
     runFunction $ ffi "$(%1).animate({opacity: 0}, %2 * 1, %3, %4)"
@@ -33,9 +33,9 @@ sendValue :: Element -> Event String
 sendValue = fmap unsafeFromJSON . domEvent "sendvalue"
 
 -- | Focus an element.
-setFocus :: Element -> UI ()
+setFocus :: Element -> UI ps t ()
 setFocus = runFunction . ffi "$(%1).focus()"
 
 -- | Scroll to the bottom of an element.
-scrollToBottom :: Element -> UI ()
+scrollToBottom :: Element -> UI ps t ()
 scrollToBottom = runFunction . ffi "jquery_scrollToBottom(%1)"

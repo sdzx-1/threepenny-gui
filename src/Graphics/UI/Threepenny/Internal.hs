@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE PolyKinds #-}
 module Graphics.UI.Threepenny.Internal (
     -- * Synopsis
     -- | Internal core:
@@ -8,7 +9,7 @@ module Graphics.UI.Threepenny.Internal (
     Window, disconnect,
     startGUI, loadFile, loadDirectory,
 
-    UI, runUI, MonadUI(..), liftIOLater, askWindow, liftJSWindow,
+    UI, runUI, liftIOLater, askWindow, liftJSWindow,
 
     FFI, FromJS, ToJS, JSFunction, JSObject, ffi,
     runFunction, callFunction,
@@ -54,7 +55,7 @@ data Window = Window
 -- | Start server for GUI sessions.
 startGUI
     :: Config               -- ^ Server configuration.
-    -> (Window -> UI ())    -- ^ Action to run whenever a client browser connects.
+    -> (Window -> UI ps t ())    -- ^ Action to run whenever a client browser connects.
     -> IO ()
 startGUI config initialize = JS.serve config $ \w -> do
     -- set up disconnect event
@@ -86,11 +87,11 @@ disconnect = eDisconnect
 loadFile
     :: String    -- ^ MIME type
     -> FilePath  -- ^ Local path to the file
-    -> UI String -- ^ Relative URI under which this file is now accessible
+    -> UI ps t String -- ^ Relative URI under which this file is now accessible
 loadFile x y = liftJSWindow $ \w -> JS.loadFile (JS.getServer w) x y
 
 -- | Make a local directory available under a relative URI.
-loadDirectory :: FilePath -> UI String
+loadDirectory :: FilePath -> UI ps t String
 loadDirectory x = liftJSWindow $ \w -> JS.loadDirectory (JS.getServer w) x
 
 {-----------------------------------------------------------------------------
@@ -143,7 +144,7 @@ fromJSObject0 el window = do
 --
 -- FIXME: For the purpose of garbage collection, this element
 -- will always be reachable from the root.
-fromJSObject :: JS.JSObject -> UI Element
+fromJSObject :: JS.JSObject -> UI ps t Element
 fromJSObject el = do
     window <- askWindow
     liftIO $ do
@@ -200,13 +201,13 @@ domEvent
 domEvent name el = elEvents el name
 
 -- | Make a new DOM element with a given tag name.
-mkElement :: String -> UI Element
+mkElement :: String -> UI ps t Element
 mkElement = mkElementNamespace Nothing
 
 -- | Make a new DOM element with a namespace and a given tag name.
 --
 -- A namespace 'Nothing' corresponds to the default HTML namespace.
-mkElementNamespace :: Maybe String -> String -> UI Element
+mkElementNamespace :: Maybe String -> String -> UI ps (t :: ps) Element
 mkElementNamespace namespace tag = do
     window <- askWindow
     let w = jsWindow window
@@ -224,13 +225,13 @@ mkElementNamespace namespace tag = do
 --
 -- NOTE: If you wish to temporarily remove an element from the DOM tree,
 -- change the 'children' property of its parent element instead.
-delete :: Element -> UI ()
+delete :: Element -> UI ps t ()
 delete el = liftJSWindow $ \w -> do
     JS.runFunction w $ ffi "$(%1).detach()" el
     Foreign.destroy $ toJSObject el
 
 -- | Remove all child elements.
-clearChildren :: Element -> UI ()
+clearChildren :: Element -> UI ps t ()
 clearChildren element = liftJSWindow $ \w -> do
     let el = toJSObject element
     Foreign.withRemotePtr el $ \_ _ -> do
@@ -239,7 +240,7 @@ clearChildren element = liftJSWindow $ \w -> do
         Foreign.clearReachable (elChildren element)
 
 -- | Append a child element.
-appendChild :: Element -> Element -> UI ()
+appendChild :: Element -> Element -> UI ps t ()
 appendChild parent child = liftJSWindow $ \w -> do
     -- FIXME: We have to stop the child being reachable from its
     -- /previous/ parent.
@@ -268,58 +269,58 @@ in which JavaScript function calls are executed.
 * Recursion for functional reactive programming.
 
 -}
-newtype UI a = UI { unUI :: Monad.RWST Window [IO ()] () IO a }
+newtype UI ps (t :: ps) a = UI { unUI :: Monad.RWST Window [IO ()] () IO a }
     deriving (Typeable)
 
-class (Monad m) => MonadUI m where
-    -- | Lift a computation from the 'UI' monad.
-    liftUI :: UI a -> m a
+-- class (Monad m) => MonadUI m where
+--     -- | Lift a computation from the 'UI' monad.
+--     liftUI :: UI ps t a -> m a
 
-instance MonadUI UI where
-    liftUI = id
+-- instance MonadUI (UI ps t) where
+--     liftUI = id
 
 -- | Access to the primitive 'JS.Window' object,
 --   for roll-your-own JS foreign calls.
-liftJSWindow :: (JS.Window -> IO a) -> UI a
+liftJSWindow :: (JS.Window -> IO a) -> UI ps t a
 liftJSWindow f = askWindow >>= liftIO . f . jsWindow
 
-instance Functor UI where
+instance Functor (UI ps t) where
     fmap f = UI . fmap f . unUI
 
-instance Applicative UI where
+instance Applicative (UI ps t) where
     pure  = UI . pure
     (<*>) = ap
 
-instance Monad UI where
+instance Monad (UI ps t) where
     return  = pure
     m >>= k = UI $ unUI m >>= unUI . k
 
-instance MonadIO UI where
+instance MonadIO (UI ps t) where
     liftIO = UI . liftIO
 
-instance MonadFix UI where
+instance MonadFix (UI ps t) where
     mfix f = UI $ mfix (unUI . f)
 
-instance MonadThrow UI where
+instance MonadThrow (UI ps t) where
     throwM = UI . throwM
 
-instance MonadCatch UI where
+instance MonadCatch (UI ps t) where
     catch m f = UI $ catch (unUI m) (unUI . f)
 
 -- | Execute an 'UI' action in a particular browser window.
 -- Also runs all scheduled 'IO' actions.
-runUI :: Window -> UI a -> IO a
+runUI :: Window -> UI ps t a -> IO a
 runUI window m = do
     (a, _, actions) <- Monad.runRWST (unUI m) window ()
     sequence_ actions
     return a
 
 -- | Retrieve current 'Window' context in the 'UI' monad.
-askWindow :: UI Window
+askWindow :: UI ps t Window
 askWindow = UI Monad.ask
 
 -- | Schedule an 'IO' action to be run later.
-liftIOLater :: IO () -> UI ()
+liftIOLater :: IO () -> UI ps t ()
 liftIOLater x = UI $ Monad.tell [x]
 
 {-----------------------------------------------------------------------------
@@ -332,22 +333,22 @@ liftIOLater x = UI $ Monad.tell [x]
 -- NOTE: The JavaScript function need not be executed immediately,
 -- it can be buffered and sent to the browser window at a later time.
 -- See 'setCallBufferMode' and 'flushCallBuffer' for more.
-runFunction :: JSFunction () -> UI ()
+runFunction :: JSFunction () -> UI ps t ()
 runFunction fun = liftJSWindow $ \w -> JS.runFunction w fun
 
 -- | Call a JavaScript function and wait for the result.
 --
 -- The client window uses JavaScript's @eval()@ function to run the code.
-callFunction :: JSFunction a -> UI a
+callFunction :: JSFunction a -> UI ps t a
 callFunction fun = liftJSWindow $ \w -> JS.callFunction w fun
 
 -- | Set the call buffering mode for the browser window.
-setCallBufferMode :: CallBufferMode -> UI ()
+setCallBufferMode :: CallBufferMode -> UI ps t ()
 setCallBufferMode x = liftJSWindow $ \w -> JS.setCallBufferMode w x
 
 -- | Flush the call buffer,
 -- i.e. send all outstanding JavaScript to the client in one single message.
-flushCallBuffer :: UI ()
+flushCallBuffer :: UI ps t ()
 flushCallBuffer = liftJSWindow $ \w -> JS.flushCallBuffer w
 
 -- | Export the given Haskell function so that it can be called
@@ -365,18 +366,18 @@ flushCallBuffer = liftJSWindow $ \w -> JS.flushCallBuffer w
 -- event handler to an 'Element',
 -- then the handler will be garbage collected
 -- as soon as the associated 'Element' is garbage collected.
-ffiExport :: JS.IsHandler a => a -> UI JSObject
+ffiExport :: JS.IsHandler a => a -> UI ps t JSObject
 ffiExport fun = liftJSWindow $ \w -> do
     handlerPtr <- JS.exportHandler w fun
     Foreign.addReachable (JS.root w) handlerPtr
     return handlerPtr
 
 -- | Print a message on the client console if the client has debugging enabled.
-debug :: String -> UI ()
+debug :: String -> UI ps t ()
 debug s = liftJSWindow $ \w -> JS.debug w s
 
 -- | Print a timestamp and the difference to the previous timestamp
 -- on the client console if the client has debugging enabled.
-timestamp :: UI ()
+timestamp :: UI ps t ()
 timestamp = liftJSWindow JS.timestamp
 

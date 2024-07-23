@@ -1,3 +1,4 @@
+{-# LANGUAGE PolyKinds #-}
 module Graphics.UI.Threepenny.DragNDrop (
     -- * Synopsis
     -- | API for handling drag and drop operations.
@@ -27,13 +28,13 @@ import Graphics.UI.Threepenny.Core
 --
 -- An element with draggable set to 'True' will receive
 -- 'drag', 'dragStart' and 'dragEnd' events.
-draggable :: WriteAttr Element Bool
+draggable :: WriteAttr ps t Element Bool
 draggable = mkWriteAttr set
     where
     set v = set' (attr "draggable") $ if v then "true" else "false"
 
 -- | Set the data that is transferred when dragging this element.
-dragData :: WriteAttr Element DragData
+dragData :: WriteAttr ps (t :: ps) Element DragData
 dragData = mkWriteAttr set
     where
     set v = set' (attr "ondragstart") $
@@ -48,7 +49,7 @@ dragData = mkWriteAttr set
 -- When dragging something over an element, the closest ancestor element
 -- that is 'droppable' will be the target and receive corresponding
 -- events.
-droppable :: WriteAttr Element Bool
+droppable :: WriteAttr ps t Element Bool
 droppable = mkWriteAttr enable
     where
     enable v = void . if v then allowDrop else blockDrop

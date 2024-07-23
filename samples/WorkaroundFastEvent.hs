@@ -14,7 +14,7 @@ main = do
     static <- getStaticDir
     startGUI defaultConfig { jsStatic = Just static } setup
 
-setup :: Window -> UI ()
+setup :: Window -> UI ps t ()
 setup window = do
     return window # set title "Workaround for slow registering of event handlers"
 
@@ -32,7 +32,7 @@ onElementId
     :: String   -- ID attribute of the element
     -> String   -- name of the DOM event to register the handler at
     -> UI void  -- handler to fire whenever the event happens
-    -> UI ()
+    -> UI ps t ()
 onElementId elid event handler = do
     window   <- askWindow
     exported <- ffiExport (runUI window handler >> return ())

@@ -1,3 +1,4 @@
+{-# LANGUAGE PolyKinds #-}
 import Control.Monad
 
 import Paths
@@ -16,7 +17,7 @@ main = do
 
 canvasSize = 400
 
-setup :: Window -> UI ()
+setup :: Window -> UI ps (t :: ps) ()
 setup window = do
     return window # set title "Canvas - Examples"
 

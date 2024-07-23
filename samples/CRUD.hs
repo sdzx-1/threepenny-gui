@@ -8,6 +8,8 @@
     A more sophisticated approach would use incremental updates.
 ------------------------------------------------------------------------------}
 {-# LANGUAGE RecursiveDo #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE PolyKinds #-}
 
 import Prelude hiding (lookup)
 import Control.Monad  (void)
@@ -23,7 +25,7 @@ import Graphics.UI.Threepenny.Core hiding (delete)
 main :: IO ()
 main = startGUI defaultConfig setup
 
-setup :: Window -> UI ()
+setup :: Window -> UI ps (t :: ps) ()
 setup window = void $ mdo
     return window # set title "CRUD Example (Simple)"
 
@@ -125,7 +127,7 @@ showDataItem (firstname, lastname) = lastname ++ ", " ++ firstname
 -- | Data item widget, consisting of two text entries
 dataItem
     :: Behavior (Maybe DataItem)
-    -> UI ((Element, Element), Tidings DataItem)
+    -> UI ps t ((Element, Element), Tidings DataItem)
 dataItem bItem = do
     entry1 <- UI.entry $ fst . maybe ("","") id <$> bItem
     entry2 <- UI.entry $ snd . maybe ("","") id <$> bItem

@@ -14,7 +14,7 @@ main = do
     static <- getStaticDir
     startGUI defaultConfig { jsStatic = Just static } setup
 
-setup :: Window -> UI ()
+setup :: Window -> UI ps t ()
 setup w = void $ do
     return w # set title "Drag 'N' Drop Example"
     UI.addStyleSheet w "DragNDropExample.css"
@@ -25,7 +25,7 @@ setup w = void $ do
 
 type Color = String
 
-mkDragPair :: Color -> Int -> UI (Element, Element)
+mkDragPair :: Color -> Int -> UI ps t (Element, Element)
 mkDragPair color position = do
     elDrag <- UI.new #. "box-drag"
         # set UI.style [("left", show position ++ "px"), ("color",color)]

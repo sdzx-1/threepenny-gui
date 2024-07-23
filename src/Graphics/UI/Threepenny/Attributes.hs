@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
+{-# LANGUAGE PolyKinds #-}
 module Graphics.UI.Threepenny.Attributes (
     -- * Synopsis
     -- | Element attributes.
@@ -26,18 +27,18 @@ import           Graphics.UI.Threepenny.Core
     Attributes
 ------------------------------------------------------------------------------}
 -- | The @checked@ status of an input element of type checkbox.
-checked :: Attr Element Bool
+checked :: Attr ps t Element Bool
 checked = fromJQueryProp "checked" (== JSON.Bool True) JSON.Bool
 
 -- | The @enabled@ status of an input element
-enabled :: Attr Element Bool
+enabled :: Attr ps t Element Bool
 enabled = fromJQueryProp "disabled" (== JSON.Bool False) (JSON.Bool . not)
 
 -- | Index of the currently selected option of a @<select>@ element.
 --
 -- The index starts at @0@.
 -- If no option is selected, then the selection is 'Nothing'.
-selection :: Attr Element (Maybe Int)
+selection :: Attr ps t Element (Maybe Int)
 selection = fromJQueryProp "selectedIndex" from (JSON.toJSON . maybe (-1) id)
     where
     from s = let JSON.Success x = JSON.fromJSON s in
@@ -50,13 +51,13 @@ selection = fromJQueryProp "selectedIndex" from (JSON.toJSON . maybe (-1) id)
     Taken from the HTML library (BSD3 license)
     http://hackage.haskell.org/package/html
 ------------------------------------------------------------------------------}
-strAttr :: String -> WriteAttr Element String
+strAttr :: String -> WriteAttr ps t Element String
 strAttr attrname = mkWriteAttr (set' (attr attrname))
 
-intAttr :: String -> WriteAttr Element Int
+intAttr :: String -> WriteAttr ps (t :: ps) Element Int
 intAttr attrname = mkWriteAttr (set' (attr attrname) . show)
 
-emptyAttr :: String -> WriteAttr Element Bool
+emptyAttr :: String -> WriteAttr ps t Element Bool
 emptyAttr attrname = mkWriteAttr (set' (attr attrname) . f)
     where
     f True  = "1"

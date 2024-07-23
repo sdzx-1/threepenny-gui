@@ -1,3 +1,4 @@
+{-# LANGUAGE PolyKinds #-}
 import Control.Monad
 
 import Paths
@@ -30,7 +31,7 @@ main = do
     static <- getStaticDir
     startGUI defaultConfig { jsStatic = Just static } setup
 
-setup :: Window -> UI ()
+setup :: Window -> UI ps t ()
 setup w = void $ do
     return w # set title "Ha-ha-ha-ks-ks-ks-ha-ha-ha-ell-ell-ell"
 
@@ -59,14 +60,14 @@ setup w = void $ do
     UI.start timer
 
 
-type Kit        = [Instrument]
-type Instrument = [Beat]
-type Beat       = UI ()         -- play the corresponding sound
+type Kit ps   t    = [Instrument ps t]
+type Instrument ps t = [Beat ps t]
+type Beat ps t      = UI ps t ()         -- play the corresponding sound
 
-mkDrumKit :: UI (Kit, [Element])
+mkDrumKit :: UI ps t (Kit ps t, [Element])
 mkDrumKit = unzip <$> mapM mkInstrument instruments
 
-mkInstrument :: String -> UI (Instrument, Element)
+mkInstrument :: String -> UI ps (t :: ps) (Instrument ps t, Element)
 mkInstrument name = do
     elCheckboxes <-
         sequence $ replicate bars  $

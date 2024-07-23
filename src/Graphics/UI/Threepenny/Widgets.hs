@@ -1,5 +1,6 @@
 {-# LANGUAGE RecordWildCards, ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-unused-do-bind #-}
+{-# LANGUAGE PolyKinds #-}
 module Graphics.UI.Threepenny.Widgets (
     -- * Synopsis
     -- | Widgets are reusable building blocks for a graphical user interface.
@@ -45,7 +46,7 @@ userText = _userTE
 -- | Create a single-line text entry.
 entry
     :: Behavior String  -- ^ Display value when the element does not have focus.
-    -> UI TextEntry
+    -> UI ps t TextEntry
 entry bValue = do -- single text entry
     input <- UI.input
 
@@ -77,11 +78,11 @@ userSelection :: ListBox a -> Tidings (Maybe a)
 userSelection = _selectionLB
 
 -- | Create a 'ListBox'.
-listBox :: forall a. Ord a
+listBox :: forall ps t a. Ord a
     => Behavior [a]               -- ^ list of items
     -> Behavior (Maybe a)         -- ^ selected item
-    -> Behavior (a -> UI Element) -- ^ display for an item
-    -> UI (ListBox a)
+    -> Behavior (a -> UI ps (t :: ps) Element) -- ^ display for an item
+    -> UI ps t (ListBox a)
 listBox bitems bsel bdisplay = do
     list <- UI.select
 
@@ -112,7 +113,7 @@ listBox bitems bsel bdisplay = do
 
     return ListBox {..}
 
-items :: WriteAttr Element [UI Element]
+items :: WriteAttr ps t Element [UI ps t Element]
 items = mkWriteAttr $ \i x -> void $ do
     return x # set children [] #+ map (\j -> UI.option #+ [j]) i
 

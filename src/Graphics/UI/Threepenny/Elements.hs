@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
+{-# LANGUAGE PolyKinds #-}
 -- | Predefined DOM elements, for convenience.
 module Graphics.UI.Threepenny.Elements (
     -- * Combinations and utilities
@@ -38,7 +39,7 @@ import           Prelude                     hiding (div, map, span)
 addStyleSheet
     :: Window
     -> FilePath
-    -> UI ()
+    -> UI ps t ()
 addStyleSheet w filename = void $ do
     el <- mkElement "link"
             # set (attr "rel" ) "stylesheet"
@@ -47,7 +48,7 @@ addStyleSheet w filename = void $ do
     getHead w #+ [element el]
 
 -- | Make a new @div@ element, synonym for 'div'.
-new :: UI Element
+new :: UI ps (t :: ps) Element
 new = div
 
 {-----------------------------------------------------------------------------

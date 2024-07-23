@@ -8,7 +8,7 @@ import Graphics.UI.Threepenny.Core
 main :: IO ()
 main = startGUI defaultConfig setup
 
-setup :: Window -> UI ()
+setup :: Window -> UI ps t ()
 setup w = do
     return w # set title "Element Test"
 

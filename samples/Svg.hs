@@ -1,3 +1,4 @@
+{-# LANGUAGE PolyKinds #-}
 import           Control.Monad                      (void)
 
 import qualified Graphics.UI.Threepenny      as UI
@@ -10,7 +11,7 @@ import qualified Graphics.UI.Threepenny.SVG  as SVG
 main :: IO ()
 main = startGUI defaultConfig setup
 
-setup :: Window -> UI ()
+setup :: Window -> UI ps t ()
 setup w = void $ do
     return w # set title "SVG"
 
@@ -22,7 +23,7 @@ setup w = void $ do
                  ]
 
 
-svgElems :: UI Element
+svgElems :: UI ps (t :: ps) Element
 svgElems = do
     context <- SVG.svg
         # set SVG.width "150"

@@ -28,7 +28,7 @@ data Timer = Timer
     } deriving (Typeable)
 
 -- | Create a new timer
-timer :: UI Timer
+timer :: UI ps t Timer
 timer = liftIO $ do
     tvRunning     <- newTVarIO False
     tvInterval    <- newTVarIO 1000
@@ -52,19 +52,19 @@ tick :: Timer -> Event ()
 tick = tTick
 
 -- | Timer interval in milliseconds.
-interval :: Attr Timer Int
+interval :: Attr ps t Timer Int
 interval = fromGetSet tInterval
 
 -- | Whether the timer is running or not.
-running :: Attr Timer Bool
+running :: Attr ps t Timer Bool
 running = fromGetSet tRunning
 
 -- | Start the timer.
-start :: Timer -> UI ()
+start :: Timer -> UI ps t ()
 start = set' running True
 
 -- | Stop the timer.
-stop :: Timer -> UI ()
+stop :: Timer -> UI ps t ()
 stop = set' running False
 
 fromTVar :: TVar a -> GetSet a a
@@ -72,7 +72,7 @@ fromTVar var = (atomically $ readTVar var, atomically . writeTVar var)
 
 type GetSet i o = (IO o, i -> IO ())
 
-fromGetSet :: (x -> GetSet i o) -> ReadWriteAttr x i o
+fromGetSet :: (x -> GetSet i o) -> ReadWriteAttr ps t x i o
 fromGetSet f = mkReadWriteAttr (liftIO . fst . f) (\i x -> liftIO $ snd (f x) i)
 
 

@@ -12,7 +12,7 @@ import Graphics.UI.Threepenny.Core
 main :: IO ()
 main = startGUI defaultConfig setup
 
-setup :: Window -> UI ()
+setup :: Window -> UI ps t ()
 setup window = void $ do
     return window # set title "Test Speed"
 

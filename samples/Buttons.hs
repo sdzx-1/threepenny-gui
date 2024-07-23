@@ -1,3 +1,4 @@
+{-# LANGUAGE PolyKinds #-}
 import Control.Monad
 import Control.Concurrent (threadDelay)
 
@@ -15,7 +16,7 @@ main = do
     static <- getStaticDir
     startGUI defaultConfig { jsStatic = Just static } setup
 
-setup :: Window -> UI ()
+setup :: Window -> UI ps t ()
 setup w = void $ do
     return w # set title "Buttons"
     UI.addStyleSheet w "buttons.css"
@@ -24,20 +25,20 @@ setup w = void $ do
     getBody w #+
         [UI.div #. "wrap" #+ (greet ++ map element buttons ++ [viewSource])]
 
-greet :: [UI Element]
+greet :: [UI ps t Element]
 greet =
     [ UI.h1  #+ [string "Hello, Haskell!"]
     , UI.div #+ [string "Try the buttons below, they hover and click."]
     ]
 
 
-mkButton :: String -> UI (Element, Element)
+mkButton :: String -> UI ps t (Element, Element)
 mkButton title = do
     button <- UI.button #. "button" #+ [string title]
     view   <- UI.p #+ [element button]
     return (button, view)
 
-mkButtons :: UI [Element]
+mkButtons :: UI ps t [Element]
 mkButtons = do
     list    <- UI.ul #. "buttons-list"
     
@@ -67,7 +68,7 @@ mkButtons = do
   where button1Title = "Click me, I delay a bit"
         button2Title = "Click me, I work immediately"
 
-viewSource :: UI Element
+viewSource :: UI ps (t :: ps) Element
 viewSource = UI.p #+
     [UI.anchor #. "view-source" # set UI.href url #+ [string "View source code"]]
     where

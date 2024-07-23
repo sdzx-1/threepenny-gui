@@ -1,3 +1,4 @@
+{-# LANGUAGE PolyKinds #-}
 module Graphics.UI.Threepenny.Events (
     -- * Synopsis
     -- | Events on DOM elements.
@@ -28,7 +29,7 @@ silence = fmap (const ())
 valueChange :: Element -> Event String
 valueChange el = unsafeMapUI el (const $ get value el) (domEvent "keydown" el)
 
-unsafeMapUI :: Element -> (t -> UI b) -> Event t -> Event b
+unsafeMapUI :: Element -> (t -> UI ps (t' :: ps) b) -> Event t -> Event b
 unsafeMapUI el f = unsafeMapIO (\a -> getWindow el >>= \w -> runUI w (f a))
 
 -- | Event that occurs when the /user/ changes the selection of a @<select>@ element.

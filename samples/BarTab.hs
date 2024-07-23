@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE PolyKinds #-}
 
 import Control.Applicative
 import Control.Monad
@@ -13,7 +14,7 @@ import Graphics.UI.Threepenny.Core
 main :: IO ()
 main = startGUI defaultConfig setup
 
-setup :: Window -> UI ()
+setup :: Window -> UI ps (t :: ps) ()
 setup w = do
     -- active elements
     return w # set title "BarTab"
@@ -30,13 +31,13 @@ setup w = do
             xs <- mapM (get value) =<< liftIO (readIORef inputs)
             element elResult # set UI.text (showNumber . sum $ map readNumber xs)
 
-        redoLayout :: UI ()
+        redoLayout :: UI ps t ()
         redoLayout = void $ do
             layout <- mkLayout =<< liftIO (readIORef inputs)
             getBody w # set children [layout]
             displayTotal
 
-        mkLayout :: [Element] -> UI Element
+        mkLayout :: [Element] -> UI ps t Element
         mkLayout xs = column $
             [row [element elAdd, element elRemove]
             ,UI.hr]
@@ -45,13 +46,13 @@ setup w = do
             ,row [UI.span # set text "Sum: ", element elResult]
             ]
 
-        addInput :: UI ()
+        addInput :: UI ps t ()
         addInput = do
             elInput <- UI.input # set value "0"
             on (domEvent "livechange") elInput $ \_ -> displayTotal
             liftIO $ modifyIORef inputs (elInput:)
 
-        removeInput :: UI ()
+        removeInput :: UI ps t ()
         removeInput = liftIO $ modifyIORef inputs (drop 1)
 
     on UI.click elAdd    $ \_ -> addInput    >> redoLayout

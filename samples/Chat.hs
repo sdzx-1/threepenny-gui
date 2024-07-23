@@ -1,3 +1,4 @@
+{-# LANGUAGE PolyKinds #-}
 import Control.Concurrent
 import qualified Control.Concurrent.Chan as Chan
 import Control.Monad
@@ -27,7 +28,7 @@ main = do
 
 type Message = (UTCTime, String, String)
 
-setup :: Chan Message -> Window -> UI ()
+setup :: Chan Message -> Window -> UI ps (t :: ps) ()
 setup globalMsgs window = do
     msgs <- liftIO $ Chan.dupChan globalMsgs
 
@@ -61,7 +62,7 @@ receiveMessages w msgs messageArea = do
           UI.scrollToBottom messageArea
           flushCallBuffer -- make sure that JavaScript functions are executed
 
-mkMessageArea :: Chan Message -> IORef String -> UI Element
+mkMessageArea :: Chan Message -> IORef String -> UI ps t Element
 mkMessageArea msgs nickname = do
     input <- UI.textarea #. "send-textarea"
     
@@ -76,7 +77,7 @@ mkMessageArea msgs nickname = do
     UI.div #. "message-area" #+ [UI.div #. "send-area" #+ [element input]]
 
 
-mkNickname :: UI (IORef String, Element)
+mkNickname :: UI ps t (IORef String, Element)
 mkNickname = do
     input  <- UI.input #. "name-input"
     el     <- UI.div   #. "name-area"  #+
@@ -89,7 +90,7 @@ mkNickname = do
     on UI.keyup input $ \_ -> liftIO . writeIORef nick . trim =<< get value input
     return (nick,el)
 
-mkMessage :: Message -> UI Element
+mkMessage :: Message -> UI ps t Element
 mkMessage (timestamp, nick, content) =
     UI.div #. "message" #+
         [ UI.div #. "timestamp" #+ [string $ show timestamp]
@@ -97,7 +98,7 @@ mkMessage (timestamp, nick, content) =
         , UI.div #. "content"   #+ [string content]
         ]
 
-viewSource :: UI Element
+viewSource :: UI ps t Element
 viewSource =
     UI.anchor #. "view-source" # set UI.href url #+ [string "View source code"]
     where

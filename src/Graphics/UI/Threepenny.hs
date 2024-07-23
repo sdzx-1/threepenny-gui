@@ -68,7 +68,7 @@ Whenever a browser connects to the server,
 the following function will be executed to start the GUI interaction.
 It builds the initial HTML page.
 
-> setup :: Window -> UI ()
+> setup :: Window -> UI ps t ()
 > setup window = do
 
 First, set the title of the HTML document

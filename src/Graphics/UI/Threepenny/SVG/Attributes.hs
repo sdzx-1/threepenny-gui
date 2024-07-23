@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
+{-# LANGUAGE PolyKinds #-}
 module Graphics.UI.Threepenny.SVG.Attributes (
     -- * Synopsis
     -- | SVG attributes as defined by W3C, Scalable Vector Graphics (SVG) 1.1
@@ -86,13 +87,13 @@ import           Graphics.UI.Threepenny.Core (Element, WriteAttr, attr,
 import           Prelude                     hiding (exponent, filter, id, max,
                                               min)
 
-strAttr :: String -> WriteAttr Element String
+strAttr :: String -> WriteAttr ps (t :: ps) Element String
 strAttr n = mkWriteAttr (set' (attr n))
 
-intAttr :: String -> WriteAttr Element Int
+intAttr :: String -> WriteAttr ps (t :: ps) Element Int
 intAttr n = mkWriteAttr (set' (attr n) . show)
 
-fltAttr :: String -> WriteAttr Element Float
+fltAttr :: String -> WriteAttr ps (t :: ps) Element Float
 fltAttr n = mkWriteAttr (set' (attr n) . show)
 
 accent_height                =  fltAttr "accent-height"
