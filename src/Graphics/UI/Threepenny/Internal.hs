@@ -304,6 +304,14 @@ instance MonadFix (UI ps t) where
 instance MonadThrow (UI ps t) where
     throwM = UI . throwM
 
+newtype FailException = FailException String
+  deriving Show
+
+instance Exception FailException
+
+instance MonadFail (UI ps t) where
+    fail s = throwM (FailException s)
+
 instance MonadCatch (UI ps t) where
     catch m f = UI $ catch (unUI m) (unUI . f)
 
